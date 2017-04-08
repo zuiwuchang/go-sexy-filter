@@ -142,7 +142,7 @@ func doFilter(name, gid, limit string, isCount bool) {
 
 	start, n := getLimit(limit)
 	var beans []Node
-	GetEngine().ShowSQL(true)
+	//GetEngine().ShowSQL(true)
 
 	session := NewSession()
 	defer session.Close()
