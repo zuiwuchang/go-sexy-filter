@@ -14,6 +14,8 @@ type Node struct {
 
 	//標題
 	Name string
+
+	Gid string
 }
 
 var g_engine *xorm.Engine

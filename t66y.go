@@ -11,14 +11,45 @@ import (
 	"regexp"
 )
 
-type T66y2 struct {
+type T66y struct {
 	proxy *url.URL
 
 	regTd *regexp.Regexp
 	regA  *regexp.Regexp
+
+	id  string
+	gid int
 }
 
-func NewT66y2() (*T66y2, error) {
+func NewT66y2() (*T66y, error) {
+	t66y, e := initBaseT66y()
+	if e != nil {
+		return nil, e
+	}
+	t66y.id = "草榴社區-亞洲無碼原創區"
+	t66y.gid = 2
+	return t66y, nil
+}
+func NewT66y15() (*T66y, error) {
+	t66y, e := initBaseT66y()
+	if e != nil {
+		return nil, e
+	}
+	t66y.id = "草榴社區-亞洲有碼原創區"
+	t66y.gid = 15
+	return t66y, nil
+}
+func NewT66y4() (*T66y, error) {
+	t66y, e := initBaseT66y()
+	if e != nil {
+		return nil, e
+	}
+	t66y.id = "草榴社區-歐美創區"
+	t66y.gid = 4
+	return t66y, nil
+}
+
+func initBaseT66y() (*T66y, error) {
 	regTd, e := regexp.Compile(`<td class="tal" style="padding-left:8px" id="">[\d\D]*?</td>`)
 	if e != nil {
 		return nil, e
@@ -29,31 +60,31 @@ func NewT66y2() (*T66y2, error) {
 		return nil, e
 	}
 
-	return &T66y2{
+	return &T66y{
 		regTd: regTd,
 		regA:  regA,
 	}, nil
 }
 
 //返回唯一的 類別標識
-func (t *T66y2) GetId() string {
+func (t *T66y) GetId() string {
 	//返回唯一的 類別標識
-	return "草榴社區-亞洲無碼原創區"
+	return t.id
 }
 
 //設置代理
-func (t *T66y2) SetProxy(proxy *url.URL) {
+func (t *T66y) SetProxy(proxy *url.URL) {
 	t.proxy = proxy
 }
 
 //發送get請求 並解析數據
-func (t *T66y2) Get(i int) error {
-	addr := fmt.Sprintf("http://t66y.com/thread0806.php?fid=2&search=&page=%v", i+1)
+func (t *T66y) Get(i int) error {
+	addr := fmt.Sprintf("http://t66y.com/thread0806.php?fid=%v&search=&page=%v", t.gid, i+1)
 	id := t.GetId()
 	return t.get(id, addr)
 }
 
-func (t *T66y2) get(id, addr string) error {
+func (t *T66y) get(id, addr string) error {
 	c := &http.Client{
 		Transport: &http.Transport{
 			Proxy: http.ProxyURL(t.proxy),
@@ -72,7 +103,7 @@ func (t *T66y2) get(id, addr string) error {
 	}
 	return t.analyze(id, b)
 }
-func (t *T66y2) analyze(id string, b []byte) error {
+func (t *T66y) analyze(id string, b []byte) error {
 	reg := t.regTd
 	arrs := reg.FindAll(b, -1)
 	if arrs != nil {
@@ -85,7 +116,7 @@ func (t *T66y2) analyze(id string, b []byte) error {
 	}
 	return nil
 }
-func (t *T66y2) analyzeTd(id string, b []byte) error {
+func (t *T66y) analyzeTd(id string, b []byte) error {
 	reg := t.regA
 	arrs := reg.FindAll(b, 1)
 	if arrs == nil {
@@ -107,7 +138,8 @@ func (t *T66y2) analyzeTd(id string, b []byte) error {
 		return nil
 	}
 	node := Node{
-		Url: string(b[:pos]),
+		Url: "http://t66y.com/" + string(b[:pos]),
+		Gid: t.GetId(),
 	}
 	b = b[pos:]
 	pos = bytes.Index(b, []byte(`>`))
@@ -118,8 +150,9 @@ func (t *T66y2) analyzeTd(id string, b []byte) error {
 	b = b[:len(b)-4]
 	node.Name = string(b)
 	if _, e := GetEngine().InsertOne(node); e != nil {
-		return e
+		//return e
+		return nil
 	}
-	log.Println("ok", node.Name)
+	fmt.Println(t.GetId(), node.Name)
 	return nil
 }
