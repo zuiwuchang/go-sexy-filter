@@ -116,6 +116,7 @@ func doGet(proxyVal, limit string) {
 	start, n := getLimit(limit)
 	//4
 	for i := 0; i < n; i++ {
+		fmt.Printf("request page %v\n", i)
 		for _, spider := range spiders {
 			spider.Get(start + i)
 		}
