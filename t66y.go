@@ -4,15 +4,17 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/axgle/mahonia"
+	"golang.org/x/net/proxy"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"regexp"
+	"strings"
 )
 
 type T66y struct {
-	proxy *url.URL
+	proxy string
 
 	regTd *regexp.Regexp
 	regA  *regexp.Regexp
@@ -73,7 +75,7 @@ func (t *T66y) GetId() string {
 }
 
 //設置代理
-func (t *T66y) SetProxy(proxy *url.URL) {
+func (t *T66y) SetProxy(proxy string) {
 	t.proxy = proxy
 }
 
@@ -83,13 +85,38 @@ func (t *T66y) Get(i int) error {
 	id := t.GetId()
 	return t.get(id, addr)
 }
-
 func (t *T66y) get(id, addr string) error {
-	c := &http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyURL(t.proxy),
-		},
+	var c *http.Client
+
+	if strings.HasPrefix(t.proxy, "http") {
+		proxyUrl, e := url.Parse(t.proxy)
+		if e != nil {
+			return e
+		}
+		c = &http.Client{
+			Transport: &http.Transport{
+				Proxy: http.ProxyURL(proxyUrl),
+			},
+		}
+	} else if strings.HasPrefix(t.proxy, "socks5://") {
+		//connect proxy
+		proxyAddr := t.proxy[9:]
+		dialer, e := proxy.SOCKS5("tcp", proxyAddr, nil, proxy.Direct)
+		if e != nil {
+			log.Fatalln(e)
+		}
+		//create dial
+		httpTransport := &http.Transport{}
+		httpTransport.Dial = dialer.Dial
+
+		//http client
+		c = &http.Client{Transport: httpTransport}
+	} else {
+		c = &http.Client{
+			Transport: &http.Transport{},
+		}
 	}
+
 	r, e := c.Get(addr)
 	if e != nil {
 		return e

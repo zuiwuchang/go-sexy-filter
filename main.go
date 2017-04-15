@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"king-go/go-xorm/params"
 	"log"
-	"net/url"
 	"strconv"
 	"strings"
 )
@@ -20,7 +19,7 @@ func main() {
 		usageAction   = "get/g(do http request) or filter/f(do sql select)"
 		defaultLimit  = "10"
 		usageLimit    = "start,n work width get or select"
-		defaultProxy  = "http://127.0.0.1:8118"
+		defaultProxy  = "socks5://127.0.0.1:1080"
 		usageProxy    = "http request use proxy"
 
 		defaultName = ""
@@ -84,14 +83,6 @@ func getLimit(str string) (int, int) {
 	return int(start), int(n)
 }
 func doGet(proxyVal, limit string) {
-	var proxy *url.URL
-	if proxyVal != "" {
-		var e error
-		proxy, e = url.Parse(proxyVal)
-		if e != nil {
-			log.Fatalln(e)
-		}
-	}
 	spiders := make([]Spider, 0)
 	type newfunc func() (*T66y, error)
 	funcs := []newfunc{
@@ -107,9 +98,9 @@ func doGet(proxyVal, limit string) {
 		spiders = append(spiders, spider)
 	}
 
-	if proxy != nil {
+	if proxyVal != "" {
 		for _, spider := range spiders {
-			spider.SetProxy(proxy)
+			spider.SetProxy(proxyVal)
 		}
 	}
 
